@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ESP32 Voice Input</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    input[type="text"] {
+      padding: 10px;
+      width: 250px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+    }
+    .submit {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .mic {
+      background-color: #2196F3;
+      color: white;
+    }
+    #result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>ESP32 Voice Input Page</h1>
+
+  <input type="text" id="textInput" placeholder="Type or say something..." />
+  <button class="mic" onclick="startVoice()">🎤 Voice</button>
+  <br/>
+  <button class="submit" onclick="submitText()">Submit</button>
+
+  <div id="result">ESP32 response will appear here</div>
+
+  <script>
+    const esp32_ip = "http://192.168.1.42"; // 🔁 Replace with your ESP32's local IP
+
+    function submitText() {
+      const text = document.getElementById("textInput").value;
+      if (!text) return alert("Please enter or speak some text.");
+      
+      fetch(`${esp32_ip}/submit?value=${encodeURIComponent(text)}`)
+        .then(res => res.text())
+        .then(data => {
+          document.getElementById("result").innerText = "ESP32 says: " + data;
+        })
+        .catch(err => {
+          document.getElementById("result").innerText = "Error: ESP32 not reachable.";
+          console.error(err);
+        });
+    }
+
+    function startVoice() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("Speech recognition not supported in this browser.");
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = function(event) {
+        const voiceText = event.results[0][0].transcript;
+        document.getElementById("textInput").value = voiceText;
+      };
+
+      recognition.onerror = function(event) {
+        alert("Voice recognition error: " + event.error);
+      };
+
+      recognition.start();
+    }
+  </script>
+</body>
+</html>
